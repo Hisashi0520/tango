@@ -195,6 +195,47 @@
             background: var(--primary);
             color: white;
         }
+
+        /* 復習フィルター */
+        .review-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .review-btn {
+            padding: 12px 8px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            background: white;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .review-btn:active { transform: scale(0.98); }
+        .review-btn.selected {
+            border-color: var(--primary);
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+        }
+
+        .review-btn .icon { font-size: 1rem; }
+        .review-btn.green-btn.selected { border-color: var(--success); background: #ecfdf5; }
+        .review-btn.yellow-btn.selected { border-color: var(--warning); background: #fffbeb; }
+        .review-btn.red-btn.selected { border-color: var(--danger); background: #fef2f2; }
+        .review-btn.gray-btn.selected { border-color: #6b7280; background: #f3f4f6; }
+
+        .review-btn .count {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-left: 4px;
+        }
         
         /* ボタン */
         .btn-group {
@@ -549,7 +590,31 @@
                 <button class="mode-btn selected" data-mode="en-jp">英語→日本語</button>
                 <button class="mode-btn" data-mode="jp-en">日本語→英語</button>
             </div>
-            
+
+            <h2>📝 復習フィルター（任意）</h2>
+            <div class="review-options">
+                <button class="review-btn green-btn" data-filter="2">
+                    <span class="icon">✅</span>
+                    <span>完璧</span>
+                    <span class="count" id="filterGreenCount">(0)</span>
+                </button>
+                <button class="review-btn yellow-btn" data-filter="1">
+                    <span class="icon">🤔</span>
+                    <span>なんとなく</span>
+                    <span class="count" id="filterYellowCount">(0)</span>
+                </button>
+                <button class="review-btn red-btn" data-filter="0">
+                    <span class="icon">❌</span>
+                    <span>覚えてない</span>
+                    <span class="count" id="filterRedCount">(0)</span>
+                </button>
+                <button class="review-btn gray-btn" data-filter="untested">
+                    <span class="icon">⬜</span>
+                    <span>未学習</span>
+                    <span class="count" id="filterGrayCount">(0)</span>
+                </button>
+            </div>
+
             <div class="btn-group">
                 <button class="start-btn" onclick="startQuiz()">学習スタート！</button>
                 <button class="reset-btn" onclick="resetAllData()">リセット</button>
@@ -2687,6 +2752,7 @@ const STORAGE_KEY = 'flashcard_progress_v2';
 
 let selectedRange = "1-600";
 let selectedMode = "en-jp";
+let selectedReviewFilters = []; // 復習フィルター（複数選択可）
 let quizWords = [];
 let currentIndex = 0;
 let sessionAnswers = {};
@@ -2701,6 +2767,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadProgress();
     updateOverallStats();
     updateRangeStats();
+    updateFilterCounts();
     setupEventListeners();
     setupSwipeGestures();
 });
@@ -2711,6 +2778,7 @@ function setupEventListeners() {
             document.querySelectorAll('.range-option').forEach(o => o.classList.remove('selected'));
             this.classList.add('selected');
             selectedRange = this.dataset.range;
+            updateFilterCounts();
         });
     });
 
@@ -2721,7 +2789,24 @@ function setupEventListeners() {
             selectedMode = this.dataset.mode;
         });
     });
-    
+
+    // 復習フィルターボタン（複数選択可能）
+    document.querySelectorAll('.review-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            this.classList.toggle('selected');
+            const filter = this.dataset.filter;
+
+            if (this.classList.contains('selected')) {
+                if (!selectedReviewFilters.includes(filter)) {
+                    selectedReviewFilters.push(filter);
+                }
+            } else {
+                selectedReviewFilters = selectedReviewFilters.filter(f => f !== filter);
+            }
+            updateFilterCounts();
+        });
+    });
+
     document.getElementById('flashcard').addEventListener('click', flipCard);
 }
 
@@ -2812,13 +2897,23 @@ function updateRangeStats() {
         { id: 'range4Stats', start: 1684, end: 2027 },
         { id: 'range5Stats', start: 1, end: 2027 }
     ];
-    
+
     ranges.forEach(range => {
         const stats = calculateStats(range.start, range.end);
         const pct = Math.round((stats.green / stats.total) * 100);
-        document.getElementById(range.id).textContent = 
+        document.getElementById(range.id).textContent =
             `✅${stats.green} 🤔${stats.yellow} ❌${stats.red} (${pct}%)`;
     });
+}
+
+function updateFilterCounts() {
+    const [start, end] = selectedRange.split('-').map(Number);
+    const stats = calculateStats(start, end);
+
+    document.getElementById('filterGreenCount').textContent = `(${stats.green})`;
+    document.getElementById('filterYellowCount').textContent = `(${stats.yellow})`;
+    document.getElementById('filterRedCount').textContent = `(${stats.red})`;
+    document.getElementById('filterGrayCount').textContent = `(${stats.untested})`;
 }
 
 function shuffle(array) {
@@ -2832,16 +2927,40 @@ function shuffle(array) {
 
 function startQuiz() {
     const [start, end] = selectedRange.split('-').map(Number);
-    quizWords = shuffle(wordData.filter(w => w.id >= start && w.id <= end));
-    
+
+    // 範囲でフィルタリング
+    let filteredWords = wordData.filter(w => w.id >= start && w.id <= end);
+
+    // 復習フィルターが選択されている場合、ステータスでもフィルタリング
+    if (selectedReviewFilters.length > 0) {
+        filteredWords = filteredWords.filter(w => {
+            const status = savedProgress[w.id];
+            for (const filter of selectedReviewFilters) {
+                if (filter === 'untested' && status === undefined) return true;
+                if (filter === '0' && status === 0) return true;
+                if (filter === '1' && status === 1) return true;
+                if (filter === '2' && status === 2) return true;
+            }
+            return false;
+        });
+    }
+
+    // 該当する単語がない場合
+    if (filteredWords.length === 0) {
+        alert('選択した条件に該当する単語がありません。');
+        return;
+    }
+
+    quizWords = shuffle(filteredWords);
+
     currentIndex = 0;
     sessionAnswers = {};
     isFlipped = false;
-    
+
     document.getElementById('setupPanel').style.display = 'none';
     document.getElementById('quizPanel').classList.add('active');
     document.getElementById('resultPanel').classList.remove('active');
-    
+
     showCard();
 }
 
@@ -2948,6 +3067,10 @@ function showResults() {
 function restart() {
     updateOverallStats();
     updateRangeStats();
+    updateFilterCounts();
+    // 復習フィルターの選択をリセット
+    selectedReviewFilters = [];
+    document.querySelectorAll('.review-btn').forEach(btn => btn.classList.remove('selected'));
     document.getElementById('setupPanel').style.display = 'block';
     document.getElementById('quizPanel').classList.remove('active');
     document.getElementById('resultPanel').classList.remove('active');
@@ -2959,6 +3082,7 @@ function resetAllData() {
         localStorage.removeItem(STORAGE_KEY);
         updateOverallStats();
         updateRangeStats();
+        updateFilterCounts();
         alert('リセットしました！');
     }
 }
