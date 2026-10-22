@@ -6,6 +6,20 @@
 ### Fixed
 ### Removed
 
+## [1.0.0] - 2026-10-22
+### Added
+- `flashcard-chugaku.html` v1.0.0 を新規追加（中学英単語 1,812語のフラッシュカードPWA）。`flashcard-leap.html` v0.2.3 をコピーして作成し、LEAP 版自体は無変更。
+  - 範囲選択: レベル1（中1前半・360語）／レベル2（中1・362語）／レベル3（中2・365語）／レベル4（中3・378語）／レベル5（発展・347語）／全部（1,812語）。
+  - カード裏面に例文（英）と例文の和訳を表示。英文中の見出し語は太字・アクセント色で強調（語尾 e/y を除いた語幹の先頭一致）。日→英モードの裏面にも例文を表示。Y モードは全意味を開示した時点で例文も表示。
+  - 発音ボタン（Web Speech API `speechSynthesis` / en-US）で単語・例文を読み上げ。`stopPropagation` でカードはめくれない。`speechSynthesis` 非対応端末ではボタンを非表示。
+  - 長い単語（10文字以上）は表面で文字サイズを縮小し、幅375px でも折り返さない。裏面が長い場合はカード内でスクロール。
+  - 設定画面の下に版数を表示。
+- `scripts/build-chugaku-data.js` を追加。`.pipeline/artifacts/eitango/level{1..5}_part*.tsv` から `data/chugaku-words.json` を生成し、`flashcard-chugaku.html` へインライン埋め込み。件数（1,812／360・362・365・378・347）を検証し、不一致なら異常終了。
+- `data/chugaku-words.json` を追加（形式: `{no, word, level, meanings:[{pos, defs}], example, exampleJa}`）。
+### Changed
+- localStorage キーを LEAP 版と分離（`chugaku-tango-progress_v1` / `chugaku-tango-quiz-mode`）。
+- 日→英モードの Y スタイルで、めくった時点で自己評価ボタンが表示されるようにした（LEAP 版では段階開示ヒントが無く評価ボタンが出なかった）。
+
 ## [0.2.3] - 2026-05-14
 ### Changed
 - `flashcard-leap.html`: 携帯利用を前提に**フォントサイズを全体的に拡大**。カード表面の英単語を 2.8rem/700 → 3.6rem/800、カード裏面の意味本文を 1〜1.15rem → 1.3rem、品詞バッジ・意味番号・ヒント・タッププロンプトを携帯バランスに合わせて微増。
