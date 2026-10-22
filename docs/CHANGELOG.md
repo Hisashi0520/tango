@@ -6,6 +6,13 @@
 ### Fixed
 ### Removed
 
+## [flashcard-app 1.1.0] - 2026-10-22
+### Added
+- `flashcard-app.html` v1.1.0（シス単版・旧版2027語）: 単語の発音ボタンを追加（Web Speech API `speechSynthesis` / en-US・rate 0.9）。表面（英→日モード）に「発音」、裏面（両モード）に「単語」ボタン。`stopPropagation` でカードはめくれない。非対応端末ではボタン非表示。LEAP版 v0.3.0 と同方式。
+- 版数定数 `APP_VERSION` / `APP_BUILD_DATE` / `APP_CHANGE_SUMMARY` とファイル冒頭コメントを新設（従来は版数表記なし。旧版は v1系扱いのため 1.1.0）。
+### Changed
+- localStorage のキー（`flashcard_progress_v2`）・保存形式は変更なし（既存の学習記録はそのまま）。
+
 ## [0.3.0] - 2026-10-22
 ### Added
 - `flashcard-leap.html` v0.3.0（LEAP版）: 単語の発音ボタンを追加（Web Speech API `speechSynthesis` / en-US・rate 0.9）。表面（英→日モード）に「発音」、裏面（両モード）に「単語」ボタン。`stopPropagation` でカードはめくれない。非対応端末ではボタン非表示。中学版 v1.0.0 と同方式。
