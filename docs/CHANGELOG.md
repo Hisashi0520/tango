@@ -6,6 +6,11 @@
 ### Fixed
 ### Removed
 
+## [flashcard-app 1.1.1] - 2026-10-22
+### Fixed
+- 231番 furniture が `{id:1, word:"231"}` と誤登録されていたのを `{id:231, word:"furniture", meaning:"家具"}` に修正（表示・発音が「231」になる／No.1 follow と id 重複）。修正後 furniture は未学習から開始。No.1 の記録はそのまま。
+- 既知: id:273 は欠番（元データ未取得のため未対応）。
+
 ## [flashcard-app 1.1.0] - 2026-10-22
 ### Added
 - `flashcard-app.html` v1.1.0（シス単版・旧版2027語）: 単語の発音ボタンを追加（Web Speech API `speechSynthesis` / en-US・rate 0.9）。表面（英→日モード）に「発音」、裏面（両モード）に「単語」ボタン。`stopPropagation` でカードはめくれない。非対応端末ではボタン非表示。LEAP版 v0.3.0 と同方式。

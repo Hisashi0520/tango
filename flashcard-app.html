@@ -1,8 +1,9 @@
 <!--
   英単語フラッシュカード（旧版・システム英単語 2027語）
-  Version: 1.1.0
+  Version: 1.1.1
   Build Date: 2026-10-22
   Change Summary: 単語の発音ボタン（Web Speech API）を追加。表面（英→日）と裏面に配置。
+  v1.1.1 (2026-10-22): 231番 furniture のデータ誤り（id:1・word:"231"）を修正
   v1.1.0 (2026-10-22): 発音ボタン追加（LEAP版 v0.3.0 と同方式・localStorage 変更なし）
 -->
 <!DOCTYPE html>
@@ -988,7 +989,7 @@ const wordData = [
 {id:227,word:"element",meaning:"要素、元素"},
 {id:228,word:"climate",meaning:"気候"},
 {id:229,word:"revolution",meaning:"革命"},
-{id:1,word:"231",meaning:"furniture 家具"},
+{id:231,word:"furniture",meaning:"家具"},
 {id:232,word:"brain",meaning:"脳"},
 {id:233,word:"atmosphere",meaning:"大気、雰囲気"},
 {id:234,word:"property",meaning:"財産"},
@@ -2783,9 +2784,9 @@ const TOTAL_WORDS = 2027;
 const STORAGE_KEY = 'flashcard_progress_v2';
 
 // バージョン情報
-const APP_VERSION = "1.1.0";
+const APP_VERSION = "1.1.1";
 const APP_BUILD_DATE = "2026-10-22";
-const APP_CHANGE_SUMMARY = "単語の発音ボタン（Web Speech API）を追加。表面（英→日）と裏面に配置。";
+const APP_CHANGE_SUMMARY = "231番 furniture のデータ誤り（id:1・word:\"231\"）を修正。";
 
 // 発音（Web Speech API）設定
 const SPEECH_LANG = 'en-US';
