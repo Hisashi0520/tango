@@ -1,8 +1,10 @@
 <!--
   LEAP 英単語フラッシュカード（改訂版2300語版）
-  Version: 0.2.3
-  Build Date: 2026-05-14
-  Change Summary: モバイル最適化。単語と意味のフォントサイズ拡大、スクロールバー全要素非表示（スクロール機能は維持）。
+  Version: 0.3.0
+  Build Date: 2026-10-22
+  Change Summary: 単語の発音ボタン（Web Speech API）を追加。表面（英→日）と裏面に配置。
+  v0.3.0 (2026-10-22): 発音ボタン追加（中学版 v1.0.0 と同方式・localStorage 変更なし）
+  v0.2.3 (2026-05-14): モバイル最適化。フォントサイズ拡大、スクロールバー非表示。
   Data Source: ukaru-eigo.com/leap-modified-list/（個人利用許諾）
 -->
 <!DOCTYPE html>
@@ -587,6 +589,25 @@
             line-height: 1.6;
         }
 
+        /* 発音ボタン */
+        .speak-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+        .speak-row.center { justify-content: center; }
+
+        .speak-btn {
+            padding: 6px 12px;
+            background: rgba(168, 85, 247, 0.15);
+            border: 1px solid rgba(168, 85, 247, 0.4);
+            border-radius: 16px;
+            color: var(--text-main);
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .speak-btn:active { background: rgba(168, 85, 247, 0.4); }
+        .no-speech .speak-row { display: none; }
+
         .tap-hint {
             position: absolute;
             bottom: 20px;
@@ -944,6 +965,9 @@
                         <div class="current-status gray" id="currentStatus">未学習</div>
                         <div class="word-text" id="questionText">agree</div>
                         <div class="meaning-count-hint" id="meaningCountHint"></div>
+                        <div class="speak-row center" id="frontSpeakRow">
+                            <button class="speak-btn" onclick="speakCurrent(event, 'word')">🔊 発音</button>
+                        </div>
                         <div class="tap-hint">タップで答えを表示</div>
                     </div>
                     <!-- 裏面: 品詞別意味 / 英単語（jp-enモード） -->
@@ -1030,9 +1054,14 @@
 // ============================================================
 // バージョン定数
 // ============================================================
-const APP_VERSION = "0.2.3";
-const APP_BUILD_DATE = "2026-05-14";
-const APP_CHANGE_SUMMARY = "モバイル最適化。単語と意味のフォントサイズ拡大、スクロールバー全要素非表示（スクロール機能は維持）。";
+const APP_VERSION = "0.3.0";
+const APP_BUILD_DATE = "2026-10-22";
+const APP_CHANGE_SUMMARY = "単語の発音ボタン（Web Speech API）を追加。表面（英→日）と裏面に配置。";
+
+// 発音（Web Speech API）設定
+const SPEECH_LANG = 'en-US';
+const SPEECH_RATE = 0.9;
+const HAS_SPEECH = ('speechSynthesis' in window) && ('SpeechSynthesisUtterance' in window);
 const TOTAL_WORDS = 2300;
 const STORAGE_KEY = 'leap-revised-progress_v1';
 const QUIZ_STYLE_KEY = 'leap-revised-quiz-mode';
@@ -1073,6 +1102,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (savedStyle && ['X', 'Y', 'simple'].includes(savedStyle)) {
             selectedQuizStyle = savedStyle;
         }
+        if (!HAS_SPEECH) document.body.classList.add('no-speech');
         updateOverallStats();
         updateRangeStats();
         updateFilterCounts();
@@ -1508,6 +1538,7 @@ function showCard() {
     // 表面・裏面の内容（モード別）
     if (selectedMode === 'en-jp') {
         document.getElementById('questionText').textContent = word.word;
+        document.getElementById('frontSpeakRow').style.display = '';
 
         if (selectedQuizStyle === 'X') {
             // X: ヒント表示
@@ -1529,10 +1560,11 @@ function showCard() {
         // jp-en モード: 表に日本語、裏に英単語
         const firstDef = getFirstMeaning(word.meanings);
         document.getElementById('questionText').textContent = firstDef;
+        document.getElementById('frontSpeakRow').style.display = 'none';
         const hintEl = document.getElementById('meaningCountHint');
         if (hintEl) hintEl.textContent = '';
         document.getElementById('answerContainer').innerHTML =
-            `<div class="meaning-text-simple">${escapeHtml(word.word)}</div>`;
+            `<div class="meaning-text-simple">${escapeHtml(word.word)}</div>` + buildSpeakRow();
     }
 
     // 自己評価ボタンを動的生成（初期は非表示）
@@ -1591,7 +1623,33 @@ function renderMeaningsBack(meanings, mode) {
         html += `<div class="reveal-hint" id="revealHint">タップで次の意味を表示</div>`;
     }
 
+    // 発音ボタン（単語）
+    html += buildSpeakRow();
     container.innerHTML = html;
+}
+
+/** 発音ボタン行（裏面用：単語） */
+function buildSpeakRow() {
+    return '<div class="speak-row center">' +
+        '<button class="speak-btn" onclick="speakCurrent(event, \'word\')">🔊 単語</button>' +
+        '</div>';
+}
+
+/** 現在のカードの単語を読み上げ（カードがめくれないよう伝播を止める） */
+function speakCurrent(event, kind) {
+    if (event) { event.stopPropagation(); event.preventDefault(); }
+    if (!HAS_SPEECH) return;
+    const word = quizWords[currentIndex];
+    if (!word) return;
+    try {
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(word.word);
+        utter.lang = SPEECH_LANG;
+        utter.rate = SPEECH_RATE;
+        window.speechSynthesis.speak(utter);
+    } catch (e) {
+        console.error('読み上げエラー:', e);
+    }
 }
 
 /**

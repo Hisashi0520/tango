@@ -6,6 +6,12 @@
 ### Fixed
 ### Removed
 
+## [0.3.0] - 2026-10-22
+### Added
+- `flashcard-leap.html` v0.3.0（LEAP版）: 単語の発音ボタンを追加（Web Speech API `speechSynthesis` / en-US・rate 0.9）。表面（英→日モード）に「発音」、裏面（両モード）に「単語」ボタン。`stopPropagation` でカードはめくれない。非対応端末ではボタン非表示。中学版 v1.0.0 と同方式。
+### Changed
+- localStorage のキー・保存形式は変更なし（既存の学習記録はそのまま）。
+
 ## [1.0.0] - 2026-10-22
 ### Added
 - `flashcard-chugaku.html` v1.0.0 を新規追加（中学英単語 1,812語のフラッシュカードPWA）。`flashcard-leap.html` v0.2.3 をコピーして作成し、LEAP 版自体は無変更。
